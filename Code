@@ -1,0 +1,66 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+import statsmodels.api as sm
+from sklearn.preprocessing import normalize
+
+# Business Problem:
+# Predicting return loss can help businesses optimize inventory, reduce waste, and improve customer satisfaction.
+
+# Load the dataset
+CustomerReturn = pd.read_csv("CustomerReturns.csv")
+
+# Check the loaded data
+print(CustomerReturn.head())
+CustomerReturn.info()
+
+# Check for missing values
+print(CustomerReturn.isnull().sum())
+
+# Remove NA values if present
+CustomerReturn.dropna(inplace=True)
+
+# Perform EDA: Visualizing key variables
+features = ['Age', 'Tenure', 'Num_purchase']
+plt.figure(figsize=(15, 5))
+for i, col in enumerate(features):
+    plt.subplot(1, 3, i + 1)
+    sns.histplot(CustomerReturn[col], kde=True)
+    plt.title(f'Distribution of {col}')
+plt.show()
+
+# Define X and Y variables
+X = CustomerReturn[['Age', 'Tenure', 'Num_purchase', 'Ave_price', 'Lifetime_purchase', 'num_of_returns', 'Amt_returned']]
+y = CustomerReturn['return_loss']
+
+# Split the dataset into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Build the model
+ReturnMod = LinearRegression()
+ReturnMod.fit(x_train, y_train)
+
+# Model Summary using statsmodels
+model = sm.OLS(y, X).fit()
+print(model.summary())
+
+# Predict test values
+y_pred = model.predict(x_test)
+
+# Calculate RMSE
+rmse = np.sqrt(np.mean((y_pred - y_test) ** 2))
+print('Root Mean Squared Error:', rmse)
+
+# Create a new DataFrame with actual vs predicted values
+results_df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+
+# Save the DataFrame to an Excel file
+results_df.to_excel("ModelResults.xlsx", index=False)
+
+# Determine correlations
+plt.figure(figsize=(10, 6))
+sns.heatmap(CustomerReturn.corr(), annot=True, cmap='coolwarm', fmt='.2f')
+plt.title("Feature Correlations")
+plt.show()
